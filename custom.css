@@ -3,7 +3,7 @@
   font-style: normal;
   font-weight: 500;
   src: local("barlowcondensed-medium"), local("barlowcondensed-medium"),
-    url("fonts/barlowcondensed-medium.ttf") format("truetype");
+    url("fonts/BarlowCondensed-Medium.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -12,7 +12,7 @@
   font-style: normal;
   font-weight: 100;
   src: local("barlowcondensed-regular"), local("barlowcondensed-regular"),
-    url("fonts/barlowcondensed-regular.ttf") format("truetype");
+    url("fonts/BarlowCondensed-Regular.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -21,7 +21,7 @@
   font-style: normal;
   font-weight: 100;
   src: local("barlowcondensed-light"), local("barlowcondensed-light"),
-    url("fonts/barlowcondensed-light.ttf") format("truetype");
+    url("fonts/BarlowCondensed-Light.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -30,7 +30,7 @@
   font-style: normal;
   font-weight: 400;
   src: local("barlow-regular"), local("barlow-regular"),
-    url("fonts/barlow-regular.ttf") format("truetype");
+    url("fonts/Barlow-Regular.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -48,7 +48,7 @@
   font-style: normal;
   font-weight: 400;
   src: local("barlow-semi-bold"), local("barlow-semi-bold"),
-    url("fonts/barlow-semi-bold.ttf") format("truetype");
+    url("fonts/Barlow-SemiBold.ttf") format("truetype");
   font-display: swap;
 }
 
