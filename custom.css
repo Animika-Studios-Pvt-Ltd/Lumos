@@ -486,7 +486,7 @@ li a.active {
 }
 
 .layer-2 p {
-  font-family: "barlowcondensed-regular";
+  font-family: "barlowcondensed-regular" !important;
   font-size: 35px;
   padding: 0 130px 20px 130px;
   color: #fff;
