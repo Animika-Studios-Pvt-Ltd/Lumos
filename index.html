@@ -226,7 +226,7 @@
   <main>
     <!-- Slider Layout strictly matching custom.css height and inner_content definitions -->
     <section class="slider palowise-hero"
-      style="height: auto; min-height: 720px; padding-left: 0; display: block; background-color: #ebebeb; background-image: linear-gradient(180deg,#ebebeb 0%,#e7e7e7 100%);">
+      style="height: auto; min-height: 720px; padding-left: 0; display: block; background-color: #ebebeb; background-image: url('Images/palowise_bg.webp'); background-size: cover; background-position: center; background-repeat: no-repeat;">
       <div class="inner_content container palowise-hero__inner" style="min-height: auto; padding: 110px 15px;">
         <div class="row align-items-center">
           <div class="col-lg-7 palowise-hero__copy" data-aos="fade-right" data-aos-duration="800"
@@ -419,8 +419,21 @@
           font-size: 13px
         }
       }
+
+      @media (max-width: 500px) {
+        .palowise-hero__globe-wrap {
+          display: none !important;
+        }
+      }
     </style>
-    <script type="module" src="banner-3d.js"></script>
+    <script type="module">
+      if (window.innerWidth >= 500) {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = 'banner-3d.js';
+        document.head.appendChild(script);
+      }
+    </script>
 
     <!-- Breadcrumbs matching project template exactly -->
     <div class="container-fluid brdcrmb">
