@@ -110,6 +110,96 @@ if (mount) {
     makeLocationDot(greece, 0xf37022);
     makeLocationDot(bangalore, 0xf37022);
 
+    /* ───── Domestic route lines (Bangalore → Indian cities, pulsating dotted paths) ───── */
+    /* Logo-derived palette: navy, purple, teal (Pune, Mumbai, Vizag removed) */
+    const indianCities = [
+        { name: 'Kolkata',            lat: 22.5726, lon: 88.3639, color: 0xF37022 },   // orange
+        { name: 'Chennai',            lat: 13.0827, lon: 80.2707, color: 0xF37022 },   // orange
+        { name: 'Delhi',              lat: 28.6139, lon: 77.2090, color: 0xF37022 },   // orange
+        { name: 'Ayodhya',            lat: 26.7922, lon: 82.1998, color: 0xF37022 },   // orange
+        { name: 'Ahmedabad',          lat: 23.0225, lon: 72.5714, color: 0xF37022 },   // orange
+        { name: 'Thiruvananthapuram', lat: 8.5241,  lon: 76.9366, color: 0xF37022 },   // orange
+    ];
+
+    const domesticLines = []; // store refs for animation
+
+    indianCities.forEach((city, idx) => {
+        const blrPos = latLon(12.9716, 77.5946, routeR);
+        const cityPos = latLon(city.lat, city.lon, routeR);
+
+        // Add a very small, elegant location marker dot at the destination city (0.016 radius)
+        const destMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.016, 16, 16),
+            new THREE.MeshBasicMaterial({ color: city.color })
+        );
+        destMarker.position.copy(cityPos);
+        globe.add(destMarker);
+
+        // Calculate actual distance between Bangalore and target city
+        const dist = blrPos.distanceTo(cityPos);
+        // Dynamic arc height: slightly higher base (R + 0.035) to prevent any surface clipping
+        const arcHeight = R + 0.035 + dist * 0.22;
+
+        // Build a mid-point that arcs slightly above the surface
+        const midLat = (12.9716 + city.lat) / 2;
+        const midLon = (77.5946 + city.lon) / 2;
+        const midPos = latLon(midLat, midLon, arcHeight);
+
+        const domesticCurve = new THREE.CatmullRomCurve3([blrPos, midPos, cityPos]);
+
+        // 1. Add a complete, thin solid base line stroke from Bangalore to the city
+        const segCount = 64;
+        const pts = domesticCurve.getPoints(segCount);
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+        const baseLineMat = new THREE.LineBasicMaterial({
+            color: city.color,
+            transparent: true,
+            opacity: 0.55,        // clear, beautiful solid base line
+            depthWrite: false
+        });
+        const baseLine = new THREE.Line(lineGeo, baseLineMat);
+        globe.add(baseLine);
+
+        // 2. Generate pulsating dots along the curve (smaller, delicate 0.020 size)
+        const localDotCount = 40;
+        const positions = [];
+        for (let i = 0; i <= localDotCount; i++) {
+            const pt = domesticCurve.getPointAt(i / localDotCount);
+            positions.push(pt.x, pt.y, pt.z);
+        }
+
+        const dotGeo = new THREE.BufferGeometry();
+        dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+        const dotMat = new THREE.PointsMaterial({
+            color: city.color,
+            size: 0.020,          // delicate, high-tech minimal dot size
+            transparent: true,
+            opacity: 0.95,
+            depthWrite: false,
+            sizeAttenuation: true
+        });
+
+        const pathDots = new THREE.Points(dotGeo, dotMat);
+        globe.add(pathDots);
+
+        // 3. Add a moving marker dot for this specific domestic route (0.022 size)
+        const cityMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.022, 16, 16),
+            new THREE.MeshBasicMaterial({ color: city.color })
+        );
+        globe.add(cityMarker);
+
+        domesticLines.push({
+            mat: dotMat,
+            curve: domesticCurve,
+            marker: cityMarker,
+            progress: 0,
+            speed: 0.004 + 0.002 * (idx % 3), // staggered speeds for an organic look
+            phase: idx * 1.05
+        });
+    });
+
     /* ───── Moving marker ───── */
     const marker = new THREE.Mesh(
         new THREE.SphereGeometry(0.045, 18, 18),
@@ -127,20 +217,37 @@ if (mount) {
     let hold = 0;
     const travelFrames = 250;
     const holdFrames = 60;
+    let frameCount = 0; // global frame counter for pulsation
+
+    /* ───── Hover Interaction to Pause on India ───── */
+    let isHovered = false;
+    mount.addEventListener('mouseenter', () => { isHovered = true; });
+    mount.addEventListener('mouseleave', () => { isHovered = false; });
+    // Support pointer events for mobile touch devices
+    mount.addEventListener('pointerenter', () => { isHovered = true; });
+    mount.addEventListener('pointerleave', () => { isHovered = false; });
 
     function animate() {
         requestAnimationFrame(animate);
+        frameCount++;
 
         // Normalize rotation angle to [0, 2*PI]
         const norm = ((globe.rotation.y % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
-        // Dynamically compute speed: fast in Pacific/Atlantic/Americas (around 1.1 rad), slow in Europe/Asia (around 4.2 rad)
+        // Dynamically compute speed: fast in Pacific/Atlantic/Americas, slow in Europe/Asia
         const minSpeed = 0.0016;
         const maxSpeed = 0.0110;
         const dynamicSpeed = minSpeed + (maxSpeed - minSpeed) * (0.5 + 0.5 * Math.cos(norm - 1.1));
 
-        /* West-to-east rotation — whole group rotates so dots stay anchored */
-        globe.rotation.y -= dynamicSpeed;
+        // India is facing the viewer when norm is between 3.20 and 3.55 radians
+        const isIndiaInFront = (norm >= 3.20 && norm <= 3.55);
+
+        /* West-to-east rotation (paused ONLY when India is facing front AND user is hovering) */
+        if (isHovered && isIndiaInFront) {
+            // Pause rotation so India can be inspected closely
+        } else {
+            globe.rotation.y -= dynamicSpeed;
+        }
 
         /* ── Marker travel logic ── */
         if (hold > 0) {
@@ -169,6 +276,25 @@ if (mount) {
 
         // Reset for loop
         if (progress >= travelFrames && hold === 0) progress = 0;
+
+        /* ── Pulsating domestic lines & moving markers ── */
+        domesticLines.forEach((dl) => {
+            // 1. Smooth sine-wave pulsation: opacity oscillates 0.2 → 0.7
+            dl.mat.opacity = 0.45 + 0.25 * Math.sin(frameCount * 0.04 + dl.phase);
+
+            // 2. Animate the traveling marker along its curve
+            dl.progress += dl.speed;
+            if (dl.progress > 1) {
+                dl.progress = 0; // seamless reset loop
+            }
+
+            // Ease-in-out curve for natural travel acceleration
+            const de = dl.progress < 0.5
+                ? 2 * dl.progress * dl.progress
+                : 1 - Math.pow(-2 * dl.progress + 2, 2) / 2;
+
+            dl.marker.position.copy(dl.curve.getPointAt(de));
+        });
 
         renderer.render(scene, camera);
     }
